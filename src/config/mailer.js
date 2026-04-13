@@ -6,7 +6,7 @@ const MAILER_API_KEY = process.env.MAILER_API_KEY;
 // 📧 Correo de pruebas (cambiar por correos reales de responsables)
 const TEST_EMAIL = "jefreynicolasromanpalacios@gmail.com";
 
-export const enviarAlertaMasiva = async (responsable, facturas) => {
+export const enviarAlertaMasiva = async (responsable, facturas, destinatario = null) => {
 
     const total = facturas.length;
     const rojas = facturas.filter(f => f.estado === "rojo").length;
@@ -56,6 +56,33 @@ export const enviarAlertaMasiva = async (responsable, facturas) => {
         `;
     }).join("");
 
+    // NOTA DE PRUEBA (Para saber a quién iría el correo en producción)
+    let testInfo = "";
+    if (destinatario) {
+        testInfo = `
+        <div style="background: #eff6ff; border: 1px solid #3b82f6; color: #1e40af; padding: 16px; margin-bottom: 24px; border-radius: 8px; font-size: 13px; line-height: 1.5;">
+            <div style="font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                🧪 MODO DE PRUEBA ACTIVO
+            </div>
+            En producción, este correo se enviaría automáticamente a: <br/>
+            <span style="display: inline-block; margin-top: 6px;">
+                <strong>Para (To):</strong> <code style="background: #dbeafe; padding: 2px 4px; border-radius: 4px;">${destinatario.email}</code> <br/>
+                <strong>Copia (Cc):</strong> <code style="background: #dbeafe; padding: 2px 4px; border-radius: 4px;">${destinatario.cc && destinatario.cc.length > 0 ? destinatario.cc.join(", ") : "Ninguno"}</code>
+            </span>
+        </div>
+        `;
+    } else {
+        testInfo = `
+        <div style="background: #fff7ed; border: 1px solid #fb923c; color: #9a3412; padding: 16px; margin-bottom: 24px; border-radius: 8px; font-size: 13px; line-height: 1.5;">
+            <div style="font-weight: 800; margin-bottom: 4px;">
+                ⚠️ USUARIO NO MAPEADO
+            </div>
+            El responsable <strong>"${responsable}"</strong> no fue encontrado en el diccionario de usuarios. <br/>
+            En producción, este correo <strong>NO se enviaría</strong> o requeriría intervención manual.
+        </div>
+        `;
+    }
+
     const html = `
     <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 700px; margin: 0 auto; background: #ffffff;">
         
@@ -81,19 +108,18 @@ export const enviarAlertaMasiva = async (responsable, facturas) => {
             </table>
         </div>
 
-        <!-- Urgency Banner -->
-        <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px 24px; margin: 0;">
-            <p style="margin: 0; font-size: 14px; color: #991b1b; font-weight: 600;">
-                ⏰ TIEMPO LÍMITE: Máximo <strong>48 horas</strong> para la aprobación de las facturas listadas a continuación.
-            </p>
-            <p style="margin: 6px 0 0 0; font-size: 12px; color: #b91c1c;">
-                El incumplimiento de este plazo puede generar retrasos operativos, penalizaciones contractuales y afectar los indicadores de cumplimiento del área.
-            </p>
-        </div>
-
         <!-- Body -->
         <div style="padding: 24px 32px;">
             
+            ${testInfo}
+
+            <!-- Urgency Banner -->
+            <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 16px 24px; margin: 0 0 24px 0;">
+                <p style="margin: 0; font-size: 14px; color: #991b1b; font-weight: 600;">
+                    ⏰ TIEMPO LÍMITE: Máximo <strong>48 horas</strong> para la aprobación de las facturas listadas a continuación.
+                </p>
+            </div>
+
             <p style="font-size: 14px; color: #374151; line-height: 1.6; margin: 0 0 16px 0;">
                 Estimado(a) <strong>${responsable}</strong>,
             </p>
@@ -155,21 +181,31 @@ export const enviarAlertaMasiva = async (responsable, facturas) => {
                 </p>
             </div>
 
-            <p style="font-size: 13px; color: #6b7280; line-height: 1.6; margin: 16px 0 0 0;">
-                Si tiene alguna duda o requiere soporte, por favor comuníquese con el área de contabilidad.
-            </p>
+            <!-- Lineamientos -->
+            <div style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 8px; padding: 16px; margin: 24px 0 16px 0;">
+                <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #1f2937;">📌 Lineamientos y Plazos:</h4>
+                <ul style="margin: 0; padding-left: 20px; font-size: 13px; color: #374151; line-height: 1.6;">
+                    <li>El único correo autorizado para la radicación de facturas es <strong>radicacionfacturaelectronica@comware.com.co</strong>.</li>
+                    <li>Él plazo máximo para la aprobación de facturas es de <strong>48 horas</strong>, con el fin de evitar inconvenientes con la DIAN.</li>
+                </ul>
+            </div>
+
+            <!-- CTA Button -->
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="https://pro.invoway.com/cliente?COMWARE" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 700; padding: 12px 24px; border-radius: 6px;">
+                    Aprobar ahora
+                </a>
+            </div>
 
             <p style="font-size: 13px; color: #374151; margin: 20px 0 0 0;">
                 Atentamente,<br/>
-                <strong>Sistema de Control de Facturación Invo-way</strong><br/>
-                <span style="font-size: 12px; color: #9ca3af;">Este es un correo automático, por favor no responda a este mensaje.</span>
+                <strong>Sistema de Control de Facturación Invo-way</strong>
             </p>
         </div>
 
-        <!-- Footer -->
         <div style="background: #f8fafc; border-top: 1px solid #e5e7eb; padding: 16px 32px; border-radius: 0 0 8px 8px;">
             <p style="margin: 0; font-size: 11px; color: #9ca3af; text-align: center;">
-                © ${new Date().getFullYear()} Invo-way · Sistema de Control de Facturación · Correo generado automáticamente
+                © ${new Date().getFullYear()} Comware · Sistema de Control de Facturación
             </p>
         </div>
     </div>
@@ -183,17 +219,21 @@ export const enviarAlertaMasiva = async (responsable, facturas) => {
         },
         Recipients: [
             {
-                To: TEST_EMAIL, // 🔴 En producción cambiar por el correo real del responsable
-            },
+                To: TEST_EMAIL // TODO: Cambiar por destinatario.email en producción
+            }
         ],
     };
 
-    await axios.post(`${MAILER_URL}/api/mailer/delivery`, data, {
-        headers: {
-            "Content-Type": "application/json",
-            "x-api-key": MAILER_API_KEY,
-        },
-    });
-
-    console.log(`📧 Correo enviado para ${responsable} (${total} facturas) → ${TEST_EMAIL}`);
+    try {
+        await axios.post(`${MAILER_URL}/api/mailer/delivery`, data, {
+            headers: {
+                "Content-Type": "application/json",
+                "x-api-key": MAILER_API_KEY,
+            },
+        });
+        console.log(`📧 Correo enviado para ${responsable} (Prueba -> ${TEST_EMAIL})`);
+    } catch (error) {
+        console.error(`❌ Error Mailer: ${error.message}`);
+        throw error;
+    }
 };
