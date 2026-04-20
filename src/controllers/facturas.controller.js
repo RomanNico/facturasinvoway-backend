@@ -220,13 +220,13 @@ export const descargarExcel = async (req, res) => {
             });
         }
 
-        worksheet.mergeCells("A1:H1");
+        worksheet.mergeCells("A1:I1");
         const titleCell = worksheet.getCell("A1");
         titleCell.value = "REPORTE OFICIAL - CONTROL FACTURACIÓN INVO-WAY";
         titleCell.font = { name: "Arial", size: 16, bold: true, color: { argb: "FF1E293B" } };
         titleCell.alignment = { horizontal: "center", vertical: "middle" };
 
-        worksheet.mergeCells("A2:H2");
+        worksheet.mergeCells("A2:I2");
         const dateCell = worksheet.getCell("A2");
         
         // Formatear fecha y hora en zona horaria de Colombia
@@ -239,7 +239,7 @@ export const descargarExcel = async (req, res) => {
             day: "numeric",
             hour: "numeric",
             minute: "numeric",
-            second: "numeric"
+            second: "2-digit"
         });
 
         dateCell.value = `Generado el: ${colombiaTime}`;
@@ -255,8 +255,9 @@ export const descargarExcel = async (req, res) => {
             "Proveedor",
             "Responsable",
             "Fecha Alta",
-            "Fecha Entrada",
-            "Días Proceso",
+            "Días Alta",
+            "Fecha UO",
+            "Días UO",
             "Estado"
         ]);
 
@@ -284,13 +285,14 @@ export const descargarExcel = async (req, res) => {
                 f.proveedor,
                 f.responsable,
                 f.fecha_alta ? new Date(f.fecha_alta).toLocaleDateString("es-CO") : "—",
+                f.dias_alta,
                 f.fecha_entrada ? new Date(f.fecha_entrada).toLocaleDateString("es-CO") : "—",
                 f.dias_proceso,
                 f.estado
             ]);
 
-            // Estilo condicional para la columna Estado (columna 8)
-            const estadoCell = row.getCell(8);
+            // Estilo condicional para la columna Estado (columna 9)
+            const estadoCell = row.getCell(9);
             if (f.estado === "Verde") estadoCell.font = { color: { argb: "FF059669" }, bold: true };
             if (f.estado === "Amarillo") estadoCell.font = { color: { argb: "FFD97706" }, bold: true };
             if (f.estado === "Crítico") estadoCell.font = { color: { argb: "FFDC2626" }, bold: true };
@@ -306,9 +308,10 @@ export const descargarExcel = async (req, res) => {
             "Content-Type",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         );
+        const fecha = now.toLocaleDateString("es-CO").replace(/\//g, "-");
         res.setHeader(
             "Content-Disposition",
-            "attachment; filename=Reporte_InvoWay.xlsx"
+            `attachment; filename=Reporte_Facturas_InvoWay_${fecha}.xlsx`
         );
 
         await workbook.xlsx.write(res);
